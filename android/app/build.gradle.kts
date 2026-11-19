@@ -43,3 +43,17 @@ kotlin {
 flutter {
     source = "../.."
 }
+// Compatibility shim for old plugins that still apply the external Kotlin Gradle plugin
+subprojects {
+    // afterEvaluate { project ->
+    //     if (project.plugins.hasPlugin("kotlin-android")) {
+    //         // Ensure a namespace is set (required by AGP 8+)
+    //         project.extensions.findByName("android")?.let { androidExt ->
+    //             val android = androidExt as com.android.build.api.dsl.LibraryExtension
+    //             if (android.namespace == null) {
+    //                 android.namespace = "com.lucasjosino.on_audio_query"
+    //             }
+    //         }
+    //     }
+    // }
+}
