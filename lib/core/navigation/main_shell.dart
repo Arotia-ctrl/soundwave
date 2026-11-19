@@ -4,6 +4,7 @@ import '../../features/home/presentation/home_screen.dart';
 import '../../features/library/presentation/library_screen.dart';
 import '../../features/playlists/presentation/playlists_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/player/presentation/mini_player.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -26,7 +27,14 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _index, children: _screens),
+      body: Column(
+        children: [
+          Expanded(
+            child: IndexedStack(index: _index, children: _screens),
+          ),
+          const MiniPlayer(),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),

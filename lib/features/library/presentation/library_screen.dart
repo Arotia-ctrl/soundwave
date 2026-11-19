@@ -157,12 +157,8 @@ class LibraryScreen extends ConsumerWidget {
     }
     return ListView.builder(
       itemCount: tracks.length,
-      itemBuilder: (context, i) => TrackTile(
-        track: tracks[i],
-        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("La lecture arrive à l'étape 3")),
-        ),
-      ),
+      itemBuilder: (context, i) =>
+          TrackTile(track: tracks[i], queue: tracks, index: i),
     );
   }
 

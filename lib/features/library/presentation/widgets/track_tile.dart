@@ -1,20 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/format.dart';
 import '../../../../shared/models/track.dart';
+import '../../../player/data/player_providers.dart';
 
-class TrackTile extends StatelessWidget {
+class TrackTile extends ConsumerWidget {
   final Track track;
-  final VoidCallback? onTap;
+  final List<Track> queue;
+  final int index;
 
-  const TrackTile({super.key, required this.track, this.onTap});
+  const TrackTile({
+    super.key,
+    required this.track,
+    required this.queue,
+    required this.index,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isCurrent = ref.watch(currentTrackProvider)?.id == track.id;
+
     return ListTile(
-      onTap: onTap,
+      onTap: () => ref.read(playerServiceProvider).playQueue(queue, index),
       leading: QueryArtworkWidget(
         id: track.id,
         type: ArtworkType.AUDIO,
@@ -35,7 +45,7 @@ class TrackTile extends StatelessWidget {
         track.title,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(color: AppColors.text),
+        style: TextStyle(color: isCurrent ? AppColors.accent : AppColors.text),
       ),
       subtitle: Text(
         '${track.artist} · ${formatDuration(track.durationMs)}',
