@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:on_audio_query/on_audio_query.dart';
+import '../../../shared/widgets/track_artwork.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/format.dart';
@@ -94,26 +94,11 @@ class _Artwork extends StatelessWidget {
               ),
             ],
           ),
-          child: QueryArtworkWidget(
-            id: trackId,
-            type: ArtworkType.AUDIO,
-            size: 800,
-            keepOldArtwork: true,
-            artworkWidth: side,
-            artworkHeight: side,
-            artworkFit: BoxFit.cover,
-            artworkBorder: BorderRadius.circular(28),
-            nullArtworkWidget: Container(
-              decoration: BoxDecoration(
-                color: AppColors.elevated,
-                borderRadius: BorderRadius.circular(28),
-              ),
-              child: Icon(
-                Icons.music_note_rounded,
-                size: side * 0.3,
-                color: AppColors.accent,
-              ),
-            ),
+          child: TrackArtwork(
+            trackId: trackId,
+            size: side,
+            radius: 28,
+            pixelSize: 800,
           ),
         );
       },

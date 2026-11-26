@@ -4,7 +4,9 @@ import 'package:just_audio_background/just_audio_background.dart';
 
 import 'core/navigation/main_shell.dart';
 import 'core/theme/app_theme.dart';
+
 import 'features/library/data/user_data_providers.dart';
+import 'features/library/presentation/library_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +25,7 @@ class SoundwaveApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Enregistre l'historique d'écoute en arrière-plan
     ref.watch(historyRecorderProvider);
-
+    ref.watch(libraryAutoRefreshProvider);
     return MaterialApp(
       title: 'SOUNDWAVE',
       debugShowCheckedModeBanner: false,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:on_audio_query/on_audio_query.dart';
+import '../../../shared/widgets/track_artwork.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../data/player_providers.dart';
@@ -34,47 +34,39 @@ class MiniPlayer extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
                 children: [
-                  QueryArtworkWidget(
-                    id: track.id,
-                    type: ArtworkType.AUDIO,
-                    keepOldArtwork: true,
-                    artworkWidth: 44,
-                    artworkHeight: 44,
-                    artworkBorder: BorderRadius.circular(8),
-                    nullArtworkWidget: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.music_note_rounded,
-                          color: AppColors.accent),
-                    ),
-                  ),
+                  TrackArtwork(trackId: track.id, size: 44, radius: 8),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(track.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: AppColors.text,
-                                fontWeight: FontWeight.w600)),
-                        Text(track.artist,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: AppColors.textMuted, fontSize: 12)),
+                        Text(
+                          track.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.text,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          track.artist,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   const _MiniPlayPause(),
                   IconButton(
-                    icon: const Icon(Icons.skip_next_rounded,
-                        color: AppColors.text),
+                    icon: const Icon(
+                      Icons.skip_next_rounded,
+                      color: AppColors.text,
+                    ),
                     onPressed: service.next,
                   ),
                 ],

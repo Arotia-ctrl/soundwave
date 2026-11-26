@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../../shared/models/track.dart';
 import '../../scanner/data/scanner_service.dart';
@@ -118,20 +119,28 @@ class LibraryController extends Notifier<LibraryState> {
     return const LibraryState();
   }
 
-  Future<void> scan() async {
+  Future<void> scan({bool silent = false}) async {
     final scanner = ref.read(scannerServiceProvider);
-    state = state.copyWith(status: LibraryStatus.loading);
+    if (!silent) state = state.copyWith(status: LibraryStatus.loading);
     try {
-      var granted = await scanner.hasPermission();
-      if (!granted) granted = await scanner.requestPermission();
+      final granted = silent
+          ? await scanner.hasPermission()
+          : await scanner.requestPermission();
       if (!granted) {
-        state = state.copyWith(status: LibraryStatus.permissionDenied);
+        if (!silent) {
+          state = state.copyWith(status: LibraryStatus.permissionDenied);
+        }
         return;
       }
       final tracks = await scanner.scan();
       state = state.copyWith(status: LibraryStatus.ready, tracks: tracks);
     } catch (e) {
-      state = state.copyWith(status: LibraryStatus.error, error: e.toString());
+      if (!silent) {
+        state = state.copyWith(
+          status: LibraryStatus.error,
+          error: e.toString(),
+        );
+      }
     }
   }
 
@@ -145,3 +154,12 @@ class LibraryController extends Notifier<LibraryState> {
     }
   }
 }
+
+/// Relance un scan silencieux quand l'app revient au premier plan : nouveaux
+/// morceaux, fichiers supprimés, retour depuis les paramètres Android.
+final libraryAutoRefreshProvider = Provider<void>((ref) {
+  final listener = AppLifecycleListener(
+    onResume: () => ref.read(libraryProvider.notifier).scan(silent: true),
+  );
+  ref.onDispose(listener.dispose);
+});

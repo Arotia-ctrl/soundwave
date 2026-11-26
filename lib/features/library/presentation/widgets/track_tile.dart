@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:on_audio_query/on_audio_query.dart';
+import '../../../../shared/widgets/track_artwork.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/format.dart';
@@ -50,22 +50,7 @@ class TrackTile extends ConsumerWidget {
 
     return ListTile(
       onTap: () => ref.read(playerServiceProvider).playQueue(queue, index),
-      leading: QueryArtworkWidget(
-        id: track.id,
-        type: ArtworkType.AUDIO,
-        artworkWidth: 48,
-        artworkHeight: 48,
-        artworkBorder: BorderRadius.circular(8),
-        nullArtworkWidget: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppColors.elevated,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(Icons.music_note_rounded, color: AppColors.accent),
-        ),
-      ),
+      leading: TrackArtwork(trackId: track.id, size: 48, radius: 8),
       title: Text(
         track.title,
         maxLines: 1,

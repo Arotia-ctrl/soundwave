@@ -10,7 +10,16 @@ class PlayerService {
   final AudioPlayer player;
   final void Function(List<Track>) onQueueChanged;
 
-  PlayerService(this.player, this.onQueueChanged);
+  PlayerService(this.player, this.onQueueChanged) {
+    // Fichier illisible (supprimé, déplacé) : on passe au morceau suivant
+    player.playbackEventStream.listen(
+      (_) {},
+      onError: (Object error, StackTrace stackTrace) async {
+        debugPrint('Fichier illisible : $error');
+        if (player.hasNext) await player.seekToNext();
+      },
+    );
+  }
 
   /// Remplace la file par [tracks] et démarre au morceau [index].
   Future<void> playQueue(List<Track> tracks, int index) async {
