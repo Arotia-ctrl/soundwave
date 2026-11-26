@@ -5,6 +5,9 @@ import 'package:on_audio_query/on_audio_query.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/format.dart';
 import '../../../../shared/models/track.dart';
+import '../../../analyzer/presentation/analysis_controller.dart';
+import '../../../analyzer/presentation/analysis_sheet.dart';
+import '../../../classification/domain/classifier.dart';
 import '../../../player/data/player_providers.dart';
 import '../../../playlists/presentation/widgets/playlist_dialogs.dart';
 import '../../data/user_data_providers.dart';
@@ -33,6 +36,17 @@ class TrackTile extends ConsumerWidget {
     final isFavorite = ref.watch(
       favoritesProvider.select((s) => s.contains(track.id)),
     );
+    final result = ref.watch(
+      analysisProvider.select((s) => s.results[track.id]),
+    );
+
+    var subtitle = '${track.artist} · ${formatDuration(track.durationMs)}';
+    if (result != null && result.mood != Mood.unknown) {
+      subtitle += ' · ${result.mood.label}';
+    }
+    if (result != null && result.analyzed && result.bpm! > 0) {
+      subtitle += ' · ${result.bpm!.round()} BPM';
+    }
 
     return ListTile(
       onTap: () => ref.read(playerServiceProvider).playQueue(queue, index),
@@ -58,11 +72,7 @@ class TrackTile extends ConsumerWidget {
         overflow: TextOverflow.ellipsis,
         style: TextStyle(color: isCurrent ? AppColors.accent : AppColors.text),
       ),
-      subtitle: Text(
-        '${track.artist} · ${formatDuration(track.durationMs)}',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      subtitle: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
       trailing: PopupMenuButton<String>(
         icon: const Icon(Icons.more_vert_rounded, color: AppColors.textMuted),
         color: AppColors.elevated,
@@ -72,6 +82,8 @@ class TrackTile extends ConsumerWidget {
               ref.read(favoritesProvider.notifier).toggle(track.id);
             case 'playlist':
               showAddToPlaylistSheet(context, track);
+            case 'analysis':
+              showAnalysisSheet(context, track);
             case 'remove':
               onRemove?.call();
           }
@@ -86,6 +98,10 @@ class TrackTile extends ConsumerWidget {
           const PopupMenuItem(
             value: 'playlist',
             child: Text('Ajouter à une playlist'),
+          ),
+          const PopupMenuItem(
+            value: 'analysis',
+            child: Text('Analyse et catégorie'),
           ),
           if (onRemove != null)
             const PopupMenuItem(
