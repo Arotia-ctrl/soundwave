@@ -21,7 +21,8 @@ class TrackTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isCurrent = ref.watch(currentTrackProvider)?.id == track.id;
+    final isCurrent =
+        ref.watch(currentTrackProvider.select((t) => t?.id == track.id));
 
     return ListTile(
       onTap: () => ref.read(playerServiceProvider).playQueue(queue, index),

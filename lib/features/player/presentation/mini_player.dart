@@ -11,17 +11,11 @@ class MiniPlayer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Ne se reconstruit que lorsque le morceau change
     final track = ref.watch(currentTrackProvider);
     if (track == null) return const SizedBox.shrink();
 
-    final playing = ref.watch(playingProvider).value ?? false;
-    final position = ref.watch(positionProvider).value ?? Duration.zero;
-    final duration = ref.watch(durationProvider).value ?? Duration.zero;
     final service = ref.read(playerServiceProvider);
-
-    final progress = duration.inMilliseconds > 0
-        ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
-        : 0.0;
 
     return Material(
       color: AppColors.elevated,
@@ -35,12 +29,7 @@ class MiniPlayer extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            LinearProgressIndicator(
-              value: progress,
-              minHeight: 2,
-              color: AppColors.accent,
-              backgroundColor: AppColors.surface,
-            ),
+            const _MiniProgress(),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
@@ -48,6 +37,7 @@ class MiniPlayer extends ConsumerWidget {
                   QueryArtworkWidget(
                     id: track.id,
                     type: ArtworkType.AUDIO,
+                    keepOldArtwork: true,
                     artworkWidth: 44,
                     artworkHeight: 44,
                     artworkBorder: BorderRadius.circular(8),
@@ -58,10 +48,8 @@ class MiniPlayer extends ConsumerWidget {
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
-                        Icons.music_note_rounded,
-                        color: AppColors.accent,
-                      ),
+                      child: const Icon(Icons.music_note_rounded,
+                          color: AppColors.accent),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -69,40 +57,24 @@ class MiniPlayer extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          track.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.text,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          track.artist,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.textMuted,
-                            fontSize: 12,
-                          ),
-                        ),
+                        Text(track.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: AppColors.text,
+                                fontWeight: FontWeight.w600)),
+                        Text(track.artist,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: AppColors.textMuted, fontSize: 12)),
                       ],
                     ),
                   ),
+                  const _MiniPlayPause(),
                   IconButton(
-                    icon: Icon(
-                      playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                      color: AppColors.text,
-                      size: 30,
-                    ),
-                    onPressed: service.togglePlay,
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.skip_next_rounded,
-                      color: AppColors.text,
-                    ),
+                    icon: const Icon(Icons.skip_next_rounded,
+                        color: AppColors.text),
                     onPressed: service.next,
                   ),
                 ],
@@ -111,6 +83,43 @@ class MiniPlayer extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MiniProgress extends ConsumerWidget {
+  const _MiniProgress();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final position = ref.watch(positionProvider).value ?? Duration.zero;
+    final duration = ref.watch(durationProvider).value ?? Duration.zero;
+    final progress = duration.inMilliseconds > 0
+        ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
+        : 0.0;
+
+    return LinearProgressIndicator(
+      value: progress,
+      minHeight: 2,
+      color: AppColors.accent,
+      backgroundColor: AppColors.surface,
+    );
+  }
+}
+
+class _MiniPlayPause extends ConsumerWidget {
+  const _MiniPlayPause();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playing = ref.watch(playingProvider).value ?? false;
+    return IconButton(
+      icon: Icon(
+        playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+        color: AppColors.text,
+        size: 30,
+      ),
+      onPressed: ref.read(playerServiceProvider).togglePlay,
     );
   }
 }

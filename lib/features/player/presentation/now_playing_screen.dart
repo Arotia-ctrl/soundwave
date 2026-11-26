@@ -13,10 +13,6 @@ class NowPlayingScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final track = ref.watch(currentTrackProvider);
-    final playing = ref.watch(playingProvider).value ?? false;
-    final shuffle = ref.watch(shuffleProvider).value ?? false;
-    final loop = ref.watch(loopModeProvider).value ?? LoopMode.off;
-    final service = ref.read(playerServiceProvider);
 
     if (track == null) {
       return const Scaffold(body: Center(child: Text('Rien en lecture')));
@@ -29,157 +25,89 @@ class NowPlayingScreen extends ConsumerWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text('En cours de lecture'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.queue_music_rounded),
-            tooltip: "File d'attente",
-            onPressed: () => _showQueue(context),
-          ),
-        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
-            QueryArtworkWidget(
-              id: track.id,
-              type: ArtworkType.AUDIO,
-              size: 800,
-              artworkWidth: 300,
-              artworkHeight: 300,
-              artworkFit: BoxFit.cover,
-              artworkBorder: BorderRadius.circular(20),
-              nullArtworkWidget: Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  color: AppColors.elevated,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.music_note_rounded,
-                  size: 96,
-                  color: AppColors.accent,
-                ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Expanded(child: Center(child: _Artwork(trackId: track.id))),
+              const SizedBox(height: 32),
+              Text(
+                track.title,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
-            ),
-            const SizedBox(height: 28),
-            Text(
-              track.title,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              track.artist,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
-            ),
-            const SizedBox(height: 20),
-            const _SeekBar(),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.shuffle_rounded,
-                    color: shuffle ? AppColors.accent : AppColors.textMuted,
-                  ),
-                  onPressed: () => service.setShuffle(!shuffle),
-                ),
-                IconButton(
-                  iconSize: 38,
-                  icon: const Icon(
-                    Icons.skip_previous_rounded,
-                    color: AppColors.text,
-                  ),
-                  onPressed: service.previous,
-                ),
-                Container(
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    iconSize: 40,
-                    padding: const EdgeInsets.all(12),
-                    icon: Icon(
-                      playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                      color: AppColors.text,
-                    ),
-                    onPressed: service.togglePlay,
-                  ),
-                ),
-                IconButton(
-                  iconSize: 38,
-                  icon: const Icon(
-                    Icons.skip_next_rounded,
-                    color: AppColors.text,
-                  ),
-                  onPressed: service.next,
-                ),
-                IconButton(
-                  icon: Icon(
-                    loop == LoopMode.one
-                        ? Icons.repeat_one_rounded
-                        : Icons.repeat_rounded,
-                    color: loop == LoopMode.off
-                        ? AppColors.textMuted
-                        : AppColors.accent,
-                  ),
-                  onPressed: service.cycleRepeat,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const _VolumeRow(),
-            const SizedBox(height: 24),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                track.artist,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
+              ),
+              const SizedBox(height: 28),
+              const _SeekBar(),
+              const SizedBox(height: 28),
+              const _MainControls(),
+              const SizedBox(height: 32),
+              const _SecondaryControls(),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  void _showQueue(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      isScrollControlled: true,
-      builder: (_) => Consumer(
-        builder: (context, ref, _) {
-          final queue = ref.watch(queueProvider);
-          final index = ref.watch(currentIndexProvider).value;
-          final service = ref.read(playerServiceProvider);
-          return SizedBox(
-            height: MediaQuery.of(context).size.height * 0.6,
-            child: ListView.builder(
-              itemCount: queue.length,
-              itemBuilder: (context, i) {
-                final t = queue[i];
-                return ListTile(
-                  selected: i == index,
-                  selectedColor: AppColors.accent,
-                  title: Text(
-                    t.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: Text(
-                    t.artist,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  onTap: () => service.seekToIndex(i),
-                );
-              },
+class _Artwork extends StatelessWidget {
+  final int trackId;
+  const _Artwork({required this.trackId});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final side = constraints.maxWidth < constraints.maxHeight
+            ? constraints.maxWidth
+            : constraints.maxHeight;
+        return Container(
+          width: side,
+          height: side,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.35),
+                blurRadius: 40,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: QueryArtworkWidget(
+            id: trackId,
+            type: ArtworkType.AUDIO,
+            size: 800,
+            keepOldArtwork: true,
+            artworkWidth: side,
+            artworkHeight: side,
+            artworkFit: BoxFit.cover,
+            artworkBorder: BorderRadius.circular(28),
+            nullArtworkWidget: Container(
+              decoration: BoxDecoration(
+                color: AppColors.elevated,
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: Icon(Icons.music_note_rounded,
+                  size: side * 0.3, color: AppColors.accent),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -200,45 +128,43 @@ class _SeekBarState extends ConsumerState<_SeekBar> {
     final duration = ref.watch(durationProvider).value ?? Duration.zero;
     final service = ref.read(playerServiceProvider);
 
-    final maxMs = duration.inMilliseconds > 0
-        ? duration.inMilliseconds.toDouble()
-        : 1.0;
+    final maxMs =
+        duration.inMilliseconds > 0 ? duration.inMilliseconds.toDouble() : 1.0;
     final value = (_drag ?? position.inMilliseconds.toDouble())
         .clamp(0.0, maxMs)
         .toDouble();
 
     return Column(
       children: [
-        Slider(
-          value: value,
-          max: maxMs,
-          activeColor: AppColors.accent,
-          inactiveColor: AppColors.elevated,
-          onChanged: (v) => setState(() => _drag = v),
-          onChangeEnd: (v) {
-            service.seek(Duration(milliseconds: v.round()));
-            setState(() => _drag = null);
-          },
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            trackHeight: 4,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+          ),
+          child: Slider(
+            value: value,
+            max: maxMs,
+            activeColor: AppColors.accent,
+            inactiveColor: AppColors.elevated,
+            onChanged: (v) => setState(() => _drag = v),
+            onChangeEnd: (v) {
+              service.seek(Duration(milliseconds: v.round()));
+              setState(() => _drag = null);
+            },
+          ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                formatDuration(value.round()),
-                style: const TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                formatDuration(duration.inMilliseconds),
-                style: const TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 12,
-                ),
-              ),
+              Text(formatDuration(value.round()),
+                  style: const TextStyle(
+                      color: AppColors.textMuted, fontSize: 12)),
+              Text(formatDuration(duration.inMilliseconds),
+                  style: const TextStyle(
+                      color: AppColors.textMuted, fontSize: 12)),
             ],
           ),
         ),
@@ -247,34 +173,183 @@ class _SeekBarState extends ConsumerState<_SeekBar> {
   }
 }
 
-class _VolumeRow extends ConsumerWidget {
-  const _VolumeRow();
+class _MainControls extends ConsumerWidget {
+  const _MainControls();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final player = ref.watch(audioPlayerProvider);
+    final playing = ref.watch(playingProvider).value ?? false;
     final service = ref.read(playerServiceProvider);
 
-    return StreamBuilder<double>(
-      stream: player.volumeStream,
-      initialData: player.volume,
-      builder: (context, snapshot) {
-        final volume = snapshot.data ?? 1.0;
-        return Row(
-          children: [
-            const Icon(Icons.volume_down_rounded, color: AppColors.textMuted),
-            Expanded(
-              child: Slider(
-                value: volume.clamp(0.0, 1.0),
-                activeColor: AppColors.accent,
-                inactiveColor: AppColors.elevated,
-                onChanged: (v) => service.setVolume(v),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _SquircleButton(
+          icon: Icons.skip_previous_rounded,
+          onTap: service.previous,
+        ),
+        const SizedBox(width: 24),
+        Material(
+          color: AppColors.primary,
+          elevation: 10,
+          shadowColor: AppColors.primary,
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: service.togglePlay,
+            child: SizedBox(
+              width: 84,
+              height: 84,
+              child: Center(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (child, animation) =>
+                      ScaleTransition(scale: animation, child: child),
+                  child: Icon(
+                    playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    key: ValueKey(playing),
+                    size: 46,
+                    color: AppColors.text,
+                  ),
+                ),
               ),
             ),
-            const Icon(Icons.volume_up_rounded, color: AppColors.textMuted),
-          ],
-        );
-      },
+          ),
+        ),
+        const SizedBox(width: 24),
+        _SquircleButton(
+          icon: Icons.skip_next_rounded,
+          onTap: service.next,
+        ),
+      ],
     );
   }
+}
+
+class _SquircleButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _SquircleButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(22);
+    return Material(
+      color: AppColors.elevated,
+      borderRadius: radius,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          width: 66,
+          height: 66,
+          child: Icon(icon, size: 36, color: AppColors.text),
+        ),
+      ),
+    );
+  }
+}
+
+class _SecondaryControls extends ConsumerWidget {
+  const _SecondaryControls();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final shuffle = ref.watch(shuffleProvider).value ?? false;
+    final loop = ref.watch(loopModeProvider).value ?? LoopMode.off;
+    final service = ref.read(playerServiceProvider);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _ToggleButton(
+          icon: Icons.shuffle_rounded,
+          active: shuffle,
+          onTap: () => service.setShuffle(!shuffle),
+        ),
+        _ToggleButton(
+          icon: loop == LoopMode.one
+              ? Icons.repeat_one_rounded
+              : Icons.repeat_rounded,
+          active: loop != LoopMode.off,
+          onTap: service.cycleRepeat,
+        ),
+        _ToggleButton(
+          icon: Icons.queue_music_rounded,
+          active: false,
+          onTap: () => _showQueue(context),
+        ),
+      ],
+    );
+  }
+}
+
+class _ToggleButton extends StatelessWidget {
+  final IconData icon;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _ToggleButton({
+    required this.icon,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(18);
+    return Material(
+      color: active
+          ? AppColors.primary.withValues(alpha: 0.25)
+          : Colors.transparent,
+      borderRadius: radius,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          width: 56,
+          height: 56,
+          child: Icon(
+            icon,
+            size: 26,
+            color: active ? AppColors.accent : AppColors.textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+void _showQueue(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppColors.surface,
+    isScrollControlled: true,
+    builder: (_) => Consumer(
+      builder: (context, ref, _) {
+        final queue = ref.watch(queueProvider);
+        final index = ref.watch(currentIndexProvider).value;
+        final service = ref.read(playerServiceProvider);
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: ListView.builder(
+            itemCount: queue.length,
+            itemBuilder: (context, i) {
+              final t = queue[i];
+              return ListTile(
+                selected: i == index,
+                selectedColor: AppColors.accent,
+                title: Text(t.title,
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                subtitle: Text(t.artist,
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                onTap: () => service.seekToIndex(i),
+              );
+            },
+          ),
+        );
+      },
+    ),
+  );
 }
