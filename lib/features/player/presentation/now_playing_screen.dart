@@ -6,6 +6,7 @@ import 'package:on_audio_query/on_audio_query.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/format.dart';
 import '../data/player_providers.dart';
+import '../../library/data/user_data_providers.dart';
 
 class NowPlayingScreen extends ConsumerWidget {
   const NowPlayingScreen({super.key});
@@ -32,7 +33,9 @@ class NowPlayingScreen extends ConsumerWidget {
           child: Column(
             children: [
               const SizedBox(height: 12),
-              Expanded(child: Center(child: _Artwork(trackId: track.id))),
+              Expanded(
+                child: Center(child: _Artwork(trackId: track.id)),
+              ),
               const SizedBox(height: 32),
               Text(
                 track.title,
@@ -47,7 +50,10 @@ class NowPlayingScreen extends ConsumerWidget {
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 28),
               const _SeekBar(),
@@ -102,8 +108,11 @@ class _Artwork extends StatelessWidget {
                 color: AppColors.elevated,
                 borderRadius: BorderRadius.circular(28),
               ),
-              child: Icon(Icons.music_note_rounded,
-                  size: side * 0.3, color: AppColors.accent),
+              child: Icon(
+                Icons.music_note_rounded,
+                size: side * 0.3,
+                color: AppColors.accent,
+              ),
             ),
           ),
         );
@@ -128,8 +137,9 @@ class _SeekBarState extends ConsumerState<_SeekBar> {
     final duration = ref.watch(durationProvider).value ?? Duration.zero;
     final service = ref.read(playerServiceProvider);
 
-    final maxMs =
-        duration.inMilliseconds > 0 ? duration.inMilliseconds.toDouble() : 1.0;
+    final maxMs = duration.inMilliseconds > 0
+        ? duration.inMilliseconds.toDouble()
+        : 1.0;
     final value = (_drag ?? position.inMilliseconds.toDouble())
         .clamp(0.0, maxMs)
         .toDouble();
@@ -159,12 +169,20 @@ class _SeekBarState extends ConsumerState<_SeekBar> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(formatDuration(value.round()),
-                  style: const TextStyle(
-                      color: AppColors.textMuted, fontSize: 12)),
-              Text(formatDuration(duration.inMilliseconds),
-                  style: const TextStyle(
-                      color: AppColors.textMuted, fontSize: 12)),
+              Text(
+                formatDuration(value.round()),
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 12,
+                ),
+              ),
+              Text(
+                formatDuration(duration.inMilliseconds),
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 12,
+                ),
+              ),
             ],
           ),
         ),
@@ -217,10 +235,7 @@ class _MainControls extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 24),
-        _SquircleButton(
-          icon: Icons.skip_next_rounded,
-          onTap: service.next,
-        ),
+        _SquircleButton(icon: Icons.skip_next_rounded, onTap: service.next),
       ],
     );
   }
@@ -256,9 +271,13 @@ class _SecondaryControls extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final track = ref.watch(currentTrackProvider);
     final shuffle = ref.watch(shuffleProvider).value ?? false;
     final loop = ref.watch(loopModeProvider).value ?? LoopMode.off;
     final service = ref.read(playerServiceProvider);
+    final isFavorite =
+        track != null &&
+        ref.watch(favoritesProvider.select((s) => s.contains(track.id)));
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -274,6 +293,17 @@ class _SecondaryControls extends ConsumerWidget {
               : Icons.repeat_rounded,
           active: loop != LoopMode.off,
           onTap: service.cycleRepeat,
+        ),
+        _ToggleButton(
+          icon: isFavorite
+              ? Icons.favorite_rounded
+              : Icons.favorite_border_rounded,
+          active: isFavorite,
+          onTap: () {
+            if (track != null) {
+              ref.read(favoritesProvider.notifier).toggle(track.id);
+            }
+          },
         ),
         _ToggleButton(
           icon: Icons.queue_music_rounded,
@@ -340,10 +370,16 @@ void _showQueue(BuildContext context) {
               return ListTile(
                 selected: i == index,
                 selectedColor: AppColors.accent,
-                title: Text(t.title,
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-                subtitle: Text(t.artist,
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                title: Text(
+                  t.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  t.artist,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 onTap: () => service.seekToIndex(i),
               );
             },

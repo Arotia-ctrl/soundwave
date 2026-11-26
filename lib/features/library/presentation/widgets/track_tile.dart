@@ -6,23 +6,33 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/format.dart';
 import '../../../../shared/models/track.dart';
 import '../../../player/data/player_providers.dart';
+import '../../../playlists/presentation/widgets/playlist_dialogs.dart';
+import '../../data/user_data_providers.dart';
 
 class TrackTile extends ConsumerWidget {
   final Track track;
   final List<Track> queue;
   final int index;
 
+  /// Renseigné uniquement dans une playlist : ajoute « Retirer de cette playlist ».
+  final VoidCallback? onRemove;
+
   const TrackTile({
     super.key,
     required this.track,
     required this.queue,
     required this.index,
+    this.onRemove,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isCurrent =
-        ref.watch(currentTrackProvider.select((t) => t?.id == track.id));
+    final isCurrent = ref.watch(
+      currentTrackProvider.select((t) => t?.id == track.id),
+    );
+    final isFavorite = ref.watch(
+      favoritesProvider.select((s) => s.contains(track.id)),
+    );
 
     return ListTile(
       onTap: () => ref.read(playerServiceProvider).playQueue(queue, index),
@@ -52,6 +62,37 @@ class TrackTile extends ConsumerWidget {
         '${track.artist} · ${formatDuration(track.durationMs)}',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
+      ),
+      trailing: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_vert_rounded, color: AppColors.textMuted),
+        color: AppColors.elevated,
+        onSelected: (value) {
+          switch (value) {
+            case 'favorite':
+              ref.read(favoritesProvider.notifier).toggle(track.id);
+            case 'playlist':
+              showAddToPlaylistSheet(context, track);
+            case 'remove':
+              onRemove?.call();
+          }
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem(
+            value: 'favorite',
+            child: Text(
+              isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'playlist',
+            child: Text('Ajouter à une playlist'),
+          ),
+          if (onRemove != null)
+            const PopupMenuItem(
+              value: 'remove',
+              child: Text('Retirer de cette playlist'),
+            ),
+        ],
       ),
     );
   }
