@@ -22,7 +22,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [scannerServiceProvider.overrideWithValue(FakeScanner())],
-        child: const SoundwaveApp(),
+        child: const SoundwaveApp(showSplash: false),
       ),
     );
     await tester.pump();

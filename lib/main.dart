@@ -8,6 +8,7 @@ import 'features/analyzer/presentation/analysis_controller.dart';
 import 'features/library/data/user_data_providers.dart';
 import 'features/library/presentation/library_controller.dart';
 import 'features/player/data/playback_persistence.dart';
+import 'features/splash/presentation/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +21,8 @@ Future<void> main() async {
 }
 
 class SoundwaveApp extends ConsumerWidget {
-  const SoundwaveApp({super.key});
+  final bool showSplash;
+  const SoundwaveApp({super.key, this.showSplash = true});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,7 +36,7 @@ class SoundwaveApp extends ConsumerWidget {
       title: 'SOUNDWAVE',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
-      home: const MainShell(),
+      home: showSplash ? const SplashGate() : const MainShell(),
     );
   }
 }
