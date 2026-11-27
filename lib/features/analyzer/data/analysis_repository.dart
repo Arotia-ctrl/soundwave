@@ -122,6 +122,11 @@ class AnalysisRepository {
     }
   }
 
+  Future<void> deleteFailed() async {
+    final db = await AppDatabase.instance;
+    await db.delete(_table, where: "analysis_status = 'failed'");
+  }
+
   Future<void> updateClassification(int trackId, Classification c) async {
     final db = await AppDatabase.instance;
     await db.update(

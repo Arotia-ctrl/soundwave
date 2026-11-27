@@ -16,6 +16,8 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import android.app.NotificationManager
+import android.content.Context
 
 class MainActivity : AudioServiceActivity() {
 
@@ -96,6 +98,20 @@ class MainActivity : AudioServiceActivity() {
                         }
                     }
                 }
+                "notificationsEnabled" -> result.success(notificationsEnabled())
+                "openNotificationSettings" -> {
+                    val intent = if (Build.VERSION.SDK_INT >= 26) {
+                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                            .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                    } else {
+                        Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.fromParts("package", packageName, null)
+                        )
+                    }
+                    startActivity(intent)
+                    result.success(null)
+                }
                 else -> result.notImplemented()
             }
         }
@@ -114,6 +130,12 @@ class MainActivity : AudioServiceActivity() {
                 mainHandler.post { result.error("native_error", e.message, null) }
             }
         }
+    }
+
+    private fun notificationsEnabled(): Boolean {
+        if (Build.VERSION.SDK_INT < 24) return true
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        return manager.areNotificationsEnabled()
     }
 
     // ---- Permissions ----

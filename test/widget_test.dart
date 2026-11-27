@@ -41,6 +41,6 @@ void main() {
     await tester.tap(find.text('Settings').last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Les réglages arrivent bientôt'), findsOneWidget);
+    expect(find.text('PERMISSIONS'), findsOneWidget);
   });
 }

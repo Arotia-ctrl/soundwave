@@ -2,10 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'user_data_repository.dart';
 
 import '../../../shared/models/track.dart';
 import '../../player/data/player_providers.dart';
-import 'user_data_repository.dart';
+import '../../settings/data/settings_controller.dart';
 
 final userDataRepositoryProvider = Provider<UserDataRepository>(
   (ref) => UserDataRepository(),
@@ -108,9 +109,12 @@ final historyRecorderProvider = Provider<void>((ref) {
     timer?.cancel();
     if (next == null) return;
     final id = next.id;
-    timer = Timer(const Duration(seconds: 15), () {
-      ref.read(historyProvider.notifier).record(id);
-    });
+    timer = Timer(
+      Duration(seconds: ref.read(settingsProvider).historySeconds),
+      () {
+        ref.read(historyProvider.notifier).record(id);
+      },
+    );
   });
 
   ref.onDispose(() => timer?.cancel());

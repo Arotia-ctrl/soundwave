@@ -37,6 +37,25 @@ class PlayerService {
     }
   }
 
+  /// Recharge une file et une position sans démarrer la lecture.
+  Future<void> prepareQueue(
+    List<Track> tracks,
+    int index,
+    Duration position,
+  ) async {
+    if (tracks.isEmpty) return;
+    onQueueChanged(tracks);
+    try {
+      await player.setAudioSources(
+        tracks.map(_toSource).toList(),
+        initialIndex: index,
+        initialPosition: position,
+      );
+    } catch (e) {
+      debugPrint('Reprise de lecture impossible : $e');
+    }
+  }
+
   AudioSource _toSource(Track t) {
     return AudioSource.uri(
       Uri.parse('content://media/external/audio/media/${t.id}'),

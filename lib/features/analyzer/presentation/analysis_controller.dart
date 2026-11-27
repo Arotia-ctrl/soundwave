@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../classification/domain/classifier.dart';
 import '../../library/presentation/library_controller.dart';
+import '../../settings/data/settings_controller.dart';
 import '../data/analysis_repository.dart';
 import '../data/native_analyzer.dart';
 import '../domain/analysis_result.dart';
@@ -51,12 +52,13 @@ final analysisProvider = NotifierProvider<AnalysisController, AnalysisState>(
 
 class AnalysisController extends Notifier<AnalysisState> {
   bool _stopRequested = false;
+  Future<void> _loadFuture = Future.value();
 
   AnalysisRepository get _repo => ref.read(analysisRepositoryProvider);
 
   @override
   AnalysisState build() {
-    Future.microtask(_load);
+    _loadFuture = Future.microtask(_load);
     return const AnalysisState();
   }
 
@@ -74,6 +76,11 @@ class AnalysisController extends Notifier<AnalysisState> {
   /// Lance ou reprend l'analyse : seuls les morceaux sans résultat sont traités.
   Future<void> start() async {
     if (state.phase == AnalysisPhase.running) return;
+    _stopRequested = false;
+    state = state.copyWith(phase: AnalysisPhase.running, done: 0, total: 0);
+
+    // Sans cette attente, un démarrage immédiat croirait que rien n'a été analysé
+    await _loadFuture;
 
     final tracks = ref.read(libraryProvider).tracks;
     final pending = [
@@ -85,12 +92,7 @@ class AnalysisController extends Notifier<AnalysisState> {
       return;
     }
 
-    _stopRequested = false;
-    state = state.copyWith(
-      phase: AnalysisPhase.running,
-      done: 0,
-      total: pending.length,
-    );
+    state = state.copyWith(total: pending.length);
 
     final native = ref.read(nativeAnalyzerProvider);
     var done = 0;
@@ -131,6 +133,18 @@ class AnalysisController extends Notifier<AnalysisState> {
 
   /// Termine le morceau en cours puis s'arrête.
   void pause() => _stopRequested = true;
+
+  /// Supprime les échecs puis relance l'analyse sur ces morceaux.
+  Future<void> retryFailed() async {
+    if (state.phase == AnalysisPhase.running) return;
+    try {
+      await _repo.deleteFailed();
+      state = state.copyWith(results: await _repo.loadAll());
+    } catch (e) {
+      debugPrint('Analyse : $e');
+    }
+    await start();
+  }
 
   Future<void> _refresh(int trackId) async {
     try {
@@ -186,3 +200,20 @@ class AnalysisController extends Notifier<AnalysisState> {
     }
   }
 }
+
+/// Lance l'analyse toute seule quand l'option est activée dans Settings :
+/// au démarrage, après un scan qui trouve de nouveaux morceaux, ou dès
+/// l'activation de l'option. À surveiller une fois, en haut de l'application.
+final autoAnalysisProvider = Provider<void>((ref) {
+  void maybeStart() {
+    if (!ref.read(settingsProvider).autoAnalysis) return;
+    if (ref.read(libraryProvider).tracks.isEmpty) return;
+    ref.read(analysisProvider.notifier).start();
+  }
+
+  ref.listen(libraryProvider.select((s) => s.tracks), (_, _) => maybeStart());
+  ref.listen(
+    settingsProvider.select((s) => s.autoAnalysis),
+    (_, _) => maybeStart(),
+  );
+});

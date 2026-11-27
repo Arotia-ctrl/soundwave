@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 class AppDatabase {
   AppDatabase._();
 
-  static const int _version = 2;
+  static const int _version = 3;
   static Future<Database>? _future;
 
   static Future<Database> get instance => _future ??= _open();
@@ -36,6 +36,13 @@ class AppDatabase {
       analysis_status TEXT NOT NULL,
       manually_overridden INTEGER NOT NULL DEFAULT 0,
       analyzed_at INTEGER NOT NULL
+    )
+  ''';
+
+  static const String _preferencesTable = '''
+    CREATE TABLE user_preferences (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
     )
   ''';
 
@@ -74,6 +81,7 @@ class AppDatabase {
       'CREATE INDEX idx_history_track ON listening_history(track_id)',
     );
     await db.execute(_analysisTable);
+    await db.execute(_preferencesTable);
   }
 
   static Future<void> _onUpgrade(
@@ -83,6 +91,9 @@ class AppDatabase {
   ) async {
     if (oldVersion < 2) {
       await db.execute(_analysisTable);
+    }
+    if (oldVersion < 3) {
+      await db.execute(_preferencesTable);
     }
   }
 }
